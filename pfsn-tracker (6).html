@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PFSN Article Tracker</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#111;min-height:100vh;padding:2rem 1rem;}
+  .wrap{max-width:960px;margin:0 auto;}
+  .card{background:#fff;border-radius:12px;border:1px solid #e5e5e5;padding:1.5rem;margin-bottom:1rem;}
+  h1{font-size:22px;font-weight:600;margin-bottom:6px;}
+  .sub{font-size:14px;color:#666;margin-bottom:1.5rem;}
+  label{font-size:12px;color:#555;display:block;margin-bottom:4px;}
+  input{width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;background:#fafafa;color:#111;}
+  input:focus{border-color:#888;background:#fff;}
+  input[type=checkbox]{width:auto;padding:0;}
+  input[type=date]{width:auto;padding:5px 10px;font-size:12px;}
+  .btn{display:block;width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;margin-top:16px;}
+  .btn:hover{background:#333;}
+  .btn-sm{display:inline-block;padding:6px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff;cursor:pointer;color:#555;white-space:nowrap;}
+  .btn-sm:hover{background:#f5f5f5;}
+  .btn-sm.active{background:#111;color:#fff;border-color:#111;}
+  .btn-danger{padding:5px 10px;border:1px solid #fcc;border-radius:6px;background:#fff5f5;color:#c00;font-size:12px;cursor:pointer;}
+  .btn-danger:hover{background:#fcc;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;}
+  .metric{background:#f8f8f8;border-radius:10px;padding:14px 16px;flex:1;min-width:120px;}
+  .metric .lbl{font-size:12px;color:#888;margin-bottom:4px;}
+  .metric .val{font-size:22px;font-weight:600;}
+  .metric .hint{font-size:11px;color:#aaa;margin-top:2px;}
+  .spin{width:28px;height:28px;border:2px solid #ddd;border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .info-box{background:#f8f8f8;border-left:3px solid #ccc;border-radius:0 8px 8px 0;padding:10px 12px;font-size:12px;color:#666;line-height:1.7;margin:12px 0;}
+  code{font-family:monospace;font-size:11px;background:#eee;padding:1px 4px;border-radius:3px;}
+  .divider{border:none;border-top:1px solid #eee;margin:16px 0;}
+  .toggle-row{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0;font-size:13px;color:#555;}
+  .toggle-row:hover{color:#111;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:500;}
+  .badge-green{background:#e8f8e8;color:#1a7f1a;}
+  .badge-blue{background:#e8f0ff;color:#2255cc;}
+  .badge-purple{background:#f0eeff;color:#6633cc;}
+  .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #eee;}
+  table{border-collapse:collapse;width:100%;font-size:12px;}
+  th{padding:7px 8px;text-align:center;font-weight:500;color:#888;background:#f8f8f8;border-bottom:1px solid #eee;white-space:nowrap;}
+  th.sl,td.sl{position:sticky;left:0;z-index:1;background:#fff;}
+  th.sl{background:#f8f8f8;}
+  th.sr,td.sr{position:sticky;right:0;z-index:1;background:#fff;}
+  th.sr{background:#f8f8f8;}
+  td{padding:5px 8px;text-align:center;border-bottom:1px solid #f0f0f0;color:#888;}
+  td.name{text-align:left;font-weight:500;color:#111;white-space:nowrap;min-width:160px;}
+  .seg{background:#f0f0f0;border-radius:8px;display:inline-flex;gap:4px;padding:3px;}
+  .hidden{display:none;}
+  .top-bar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#666;flex-shrink:0;}
+  .bar-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;}
+  .bar-meta{flex:1;min-width:0;}
+  .bar-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bar-track{height:5px;background:#eee;border-radius:999px;overflow:hidden;margin-top:5px;}
+  .bar-fill{height:100%;border-radius:999px;}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .progress-bar{height:4px;background:#eee;border-radius:2px;margin-top:8px;overflow:hidden;max-width:300px;margin-left:auto;margin-right:auto;}
+  .progress-fill{height:100%;background:#111;border-radius:2px;transition:width 0.3s;}
+  .check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-top:8px;max-height:240px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:10px;background:#fafafa;}
+  .check-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:13px;}
+  .check-item:hover{background:#f0f0f0;}
+  .check-item input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#111;}
+  .check-item label{cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .check-item code{font-size:10px;color:#888;background:#eee;padding:1px 5px;border-radius:3px;flex-shrink:0;}
+  .author-search{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:8px;background:#fff;}
+  .author-search:focus{outline:none;border-color:#888;}
+  .select-all-row{display:flex;gap:8px;margin-bottom:6px;align-items:center;flex-wrap:wrap;}
+  .link-btn{font-size:12px;color:#555;text-decoration:underline;cursor:pointer;background:none;border:none;padding:0;}
+  .link-btn:hover{color:#111;}
+  .filter-badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#e8f0ff;color:#2255cc;margin-left:6px;}
+  .day-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+  .day-label{font-size:13px;font-weight:600;color:#111;min-width:110px;flex-shrink:0;}
+  .day-label.today-lbl{color:#2255cc;}
+  .day-label.weekend{color:#aaa;}
+  .day-bar-wrap{flex:1;display:flex;align-items:center;gap:10px;}
+  .day-bar-track{flex:1;height:8px;background:#eee;border-radius:999px;overflow:hidden;}
+  .day-bar-fill{height:100%;border-radius:999px;}
+  .day-count{font-size:13px;font-weight:600;min-width:50px;text-align:right;}
+  .day-sub{font-size:11px;font-weight:500;min-width:55px;text-align:right;}
+  .range-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .preset-btn{padding:5px 12px;border:1px solid #ddd;border-radius:20px;font-size:12px;background:#fff;cursor:pointer;color:#555;}
+  .preset-btn:hover{background:#f5f5f5;}
+  .preset-btn.active{background:#111;color:#fff;border-color:#111;}
+  .custom-range{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .range-label{font-size:13px;font-weight:500;color:#111;}
+
+  /* Groups */
+  .group-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid #ddd;background:#fff;cursor:pointer;transition:all .15s;}
+  .group-chip:hover{border-color:#888;}
+  .group-chip.active{background:#111;color:#fff;border-color:#111;}
+  .group-chip .chip-x{font-size:14px;opacity:.6;cursor:pointer;margin-left:2px;}
+  .group-chip .chip-x:hover{opacity:1;}
+  .group-chip.all-chip{border-style:dashed;}
+  .groups-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;}
+  .group-card{background:#f8f8f8;border-radius:10px;border:1px solid #eee;padding:12px 14px;margin-bottom:8px;}
+  .group-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .group-name{font-size:14px;font-weight:600;}
+  .group-members{font-size:12px;color:#888;}
+  .new-group-form{background:#f0f0ff;border:1.5px dashed #aac;border-radius:10px;padding:14px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SETUP -->
+<div id="s-setup">
+  <div class="card">
+    <h1>PFSN Article Tracker</h1>
+    <p class="sub">Connect your WordPress site to track published articles per author.</p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div><label>WordPress site URL</label><input id="url-in" placeholder="https://pfsnews.com"></div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="margin:0;">Post types &nbsp;<span id="pt-count" class="hidden filter-badge">0 selected</span></label>
+          <a href="#" onclick="detectTypes(event)" style="font-size:12px;color:#555;text-decoration:underline;">auto-detect →</a>
+        </div>
+        <div id="pt-detected" class="hidden" style="margin-top:8px;">
+          <div class="select-all-row"><button class="link-btn" onclick="checkAll('pt')">Select all</button><button class="link-btn" onclick="uncheckAll('pt')">Deselect all</button></div>
+          <div class="check-grid" id="pt-grid"></div>
+        </div>
+        <div id="pt-manual" style="margin-top:8px;"><input id="pt-in" placeholder="Or type post type slug: post, article, story…" value="post"></div>
+      </div>
+      <div><label>Monthly goal per author</label><input id="goal-in" type="number" value="125" min="1" style="width:120px;"></div>
+    </div>
+    <hr class="divider">
+    <div class="toggle-row" onclick="toggleAuth()">
+      <span id="auth-arrow">▶</span><strong>Authentication</strong>
+      <span id="auth-badge" class="hidden badge badge-green">enabled</span>
+      <span style="color:#aaa;font-weight:400;"> — optional</span>
+    </div>
+    <div id="auth-fields" class="hidden" style="flex-direction:column;gap:10px;margin-top:12px;">
+      <div class="info-box">In WordPress: <strong>Users → Your Profile → Application Passwords</strong> → name it → <strong>Add New</strong> → copy.</div>
+      <div><label>WordPress username</label><input id="wp-user" placeholder="admin" autocomplete="off"></div>
+      <div>
+        <label>Application password</label>
+        <input id="wp-pass" type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" autocomplete="new-password">
+        <p style="font-size:11px;color:#aaa;margin-top:4px;">Stored in memory only — sent exclusively to your WordPress site.</p>
+      </div>
+    </div>
+    <hr class="divider">
+    <button class="btn" onclick="handleConnect()">Connect →</button>
+    <p id="setup-err" class="hidden" style="color:#c00;font-size:13px;margin-top:8px;"></p>
+  </div>
+</div>
+
+<!-- AUTHOR / GROUPS SCREEN -->
+<div id="s-authors" class="hidden">
+  <div class="card">
+    <!-- Tab bar -->
+    <div style="display:flex;gap:0;border-bottom:1px solid #eee;margin-bottom:16px;">
+      <button id="tab-btn-filter" onclick="switchTab('filter')" style="padding:8px 18px;font-size:13px;font-weight:500;background:none;border:none;border-bottom:2px solid #111;cursor:pointer;color:#111;">Select authors</button>
+      <button id="tab-btn-groups" onclick="switchTab('groups')" style="padding:8px 18px;font-size:13px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:#888;">Manage groups</button>
+    </div>
+
+    <!-- Filter tab -->
+    <div id="tab-filter">
+      <p style="font-size:13px;color:#666;margin-bottom:10px;">Select individual authors or choose a saved group.</p>
+
+      <!-- Group quick-select chips -->
+      <div id="group-chips-row" class="groups-row" style="margin-bottom:12px;"></div>
+
+      <div class="select-all-row">
+        <button class="link-btn" onclick="checkAll('auth')">Select all</button>
+        <button class="link-btn" onclick="uncheckAll('auth')">Deselect all</button>
+        <span id="auth-selected-count" style="font-size:12px;color:#888;margin-left:8px;"></span>
+      </div>
+      <input class="author-search" id="author-search" placeholder="Search authors…" oninput="filterAuthorList()">
+      <div class="check-grid" id="author-grid" style="max-height:280px;"></div>
+      <button class="btn" onclick="handleAuthorsConfirmed()" style="margin-top:14px;">Load dashboard →</button>
+    </div>
+
+    <!-- Groups tab -->
+    <div id="tab-groups" class="hidden">
+      <p style="font-size:13px;color:#666;margin-bottom:14px;">Create named groups of authors. Groups are saved in your browser.</p>
+      <div id="groups-list"></div>
+      <div class="new-group-form">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;">+ Create new group</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <label>Group name</label>
+            <input id="new-group-name" placeholder="e.g. Content Managers" style="font-size:13px;">
+          </div>
+          <div>
+            <label>Members</label>
+            <input class="author-search" id="new-group-search" placeholder="Search authors…" oninput="filterNewGroupList()" style="margin-bottom:6px;">
+            <div class="check-grid" id="new-group-grid" style="max-height:200px;"></div>
+          </div>
+          <button class="btn-sm" onclick="saveNewGroup()" style="width:auto;background:#111;color:#fff;border-color:#111;">Save group</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="s-loading" class="hidden" style="text-align:center;padding:4rem 0;">
+  <div class="spin"></div>
+  <p id="load-msg" style="font-size:14px;color:#555;font-weight:500;margin-bottom:4px;">Connecting...</p>
+  <p id="load-detail" style="font-size:12px;color:#aaa;"></p>
+  <div class="progress-bar"><div class="progress-fill" id="load-progress" style="width:0%"></div></div>
+</div>
+
+<!-- ERROR -->
+<div id="s-error" class="hidden">
+  <div class="card">
+    <h1 style="font-size:18px;margin-bottom:8px;">Could not connect</h1>
+    <p id="err-msg" style="font-size:14px;color:#555;margin-bottom:12px;"></p>
+    <div id="err-cors" class="hidden info-box">
+      <strong>CORS issue.</strong> Add this to your theme's <code>functions.php</code>:<br><br>
+      <code style="display:block;white-space:pre;font-size:11px;line-height:1.8;margin-top:6px;">add_filter('rest_pre_serve_request',function($s,$r,$q,$v){
+  header('Access-Control-Allow-Origin: *');
+  header('Access-Control-Allow-Headers: Authorization,Content-Type');
+  return $s;
+},10,4);</code>
+    </div>
+    <div id="err-posttype" class="hidden info-box"><strong>Post type not found.</strong> Use auto-detect to find the correct slug.</div>
+    <div style="display:flex;gap:8px;margin-top:1rem;">
+      <button class="btn-sm" onclick="show('s-setup')">← Try again</button>
+      <button class="btn-sm hidden" id="btn-noauth" onclick="retryNoAuth()">Retry without auth</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="s-dash" class="hidden">
+  <div class="top-bar">
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:17px;font-weight:600;" id="dash-site"></span>
+        <span id="dash-pt" style="font-size:12px;color:#888;"></span>
+        <span id="dash-auth-badge" class="hidden badge badge-green">authenticated</span>
+        <span id="dash-group-badge" class="hidden badge badge-purple"></span>
+        <span id="dash-author-filter" class="hidden badge badge-blue"></span>
+      </div>
+      <div class="range-bar">
+        <button class="preset-btn active" id="pre-month" onclick="applyPreset('month')">This month</button>
+        <button class="preset-btn" id="pre-week" onclick="applyPreset('week')">This week</button>
+        <button class="preset-btn" id="pre-today" onclick="applyPreset('today')">Today</button>
+        <button class="preset-btn" id="pre-last7" onclick="applyPreset('last7')">Last 7 days</button>
+        <button class="preset-btn" id="pre-last30" onclick="applyPreset('last30')">Last 30 days</button>
+        <button class="preset-btn" id="pre-custom" onclick="applyPreset('custom')">Custom…</button>
+      </div>
+      <div id="custom-range-row" class="custom-range hidden">
+        <input type="date" id="date-from">
+        <span style="font-size:13px;color:#888;">to</span>
+        <input type="date" id="date-to">
+        <button class="btn-sm" onclick="applyCustomRange()" style="padding:5px 14px;">Apply</button>
+      </div>
+      <span id="range-label" class="range-label"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <button class="btn-sm" onclick="reload()">↻ Refresh</button>
+      <button class="btn-sm" onclick="openAuthorScreen()">Filter authors</button>
+      <button class="btn-sm" onclick="show('s-setup')">Change site</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="metric"><div class="lbl">Total articles</div><div class="val" id="sc-total">—</div><div class="hint" id="sc-total-sub"></div></div>
+    <div class="metric"><div class="lbl">On goal</div><div class="val" id="sc-ongoal">—</div><div class="hint" id="sc-ongoal-sub"></div></div>
+    <div class="metric"><div class="lbl">Avg per author</div><div class="val" id="sc-avg">—</div><div class="hint" id="sc-avg-sub"></div></div>
+    <div class="metric"><div class="lbl">Best day</div><div class="val" id="sc-bestday">—</div><div class="hint" id="sc-bestday-sub"></div></div>
+  </div>
+
+  <div class="card" style="padding:1.25rem;">
+    <div class="section-header">
+      <span style="font-size:13px;color:#888;" id="view-sub"></span>
+      <div class="seg">
+        <button id="btn-bars" class="btn-sm active" onclick="setView('bars')">Progress</button>
+        <button id="btn-daily" class="btn-sm" onclick="setView('daily')">Daily production</button>
+        <button id="btn-pivot" class="btn-sm" onclick="setView('pivot')">Breakdown</button>
+      </div>
+    </div>
+    <div id="view-bars"><div id="bars-list"></div><p id="bars-note" style="font-size:12px;color:#aaa;margin-top:8px;"></p></div>
+    <div id="view-daily" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:12px;color:#aaa;" id="daily-note"></span>
+        <span id="daily-target-badge" style="font-size:12px;color:#888;"></span>
+      </div>
+      <div id="daily-list"></div>
+    </div>
+    <div id="view-pivot" class="hidden">
+      <div class="tbl-wrap"><table id="pivot-tbl"></table></div>
+      <p style="font-size:12px;color:#aaa;margin-top:8px;">Darker green = more articles. Scroll right to see all days.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const GROUPS_KEY='pfsn_author_groups';
+
+let S={
+  url:'',goal:125,postTypes:[],user:'',pass:'',
+  allAuthors:[],selectedAuthorIds:new Set(),activeGroupName:null,
+  matrix:[],dailyTotals:[],dates:[],dateFrom:null,dateTo:null,
+  preset:'month',view:'bars',authOpen:false
+};
+
+// ── Group persistence ─────────────────────────────────────────
+function loadGroups(){try{return JSON.parse(localStorage.getItem(GROUPS_KEY)||'[]');}catch{return[];}}
+function saveGroups(groups){localStorage.setItem(GROUPS_KEY,JSON.stringify(groups));}
+function getGroups(){return loadGroups();}
+
+// ── Utilities ─────────────────────────────────────────────────
+function show(id){['s-setup','s-authors','s-loading','s-error','s-dash'].forEach(s=>document.getElementById(s).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
+function setMsg(m,d,pct){if(m)document.getElementById('load-msg').textContent=m;if(d!==undefined)document.getElementById('load-detail').textContent=d;if(pct!==undefined)document.getElementById('load-progress').style.width=Math.min(pct,99)+'%';}
+function pad(n){return String(n).padStart(2,'0');}
+function fmtDate(d){return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function parseDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtDisplay(d){return`${MS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function isToday(d){const n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();}
+function toggleAuth(){S.authOpen=!S.authOpen;const f=document.getElementById('auth-fields');f.classList.toggle('hidden',!S.authOpen);f.style.display=S.authOpen?'flex':'none';document.getElementById('auth-arrow').textContent=S.authOpen?'▼':'▶';document.getElementById('auth-badge').classList.toggle('hidden',!S.authOpen);}
+function cleanUrl(u){u=u.trim().replace(/\/+$/,'');if(!/^https?:\/\//i.test(u))u='https://'+u;return u;}
+function getHeaders(){const h={Accept:'application/json'};if(S.user&&S.pass)h['Authorization']='Basic '+btoa(S.user+':'+S.pass);return h;}
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(t){
+  ['filter','groups'].forEach(n=>{
+    document.getElementById('tab-'+n).classList.toggle('hidden',n!==t);
+    const btn=document.getElementById('tab-btn-'+n);
+    btn.style.borderBottomColor=n===t?'#111':'transparent';
+    btn.style.color=n===t?'#111':'#888';
+  });
+  if(t==='groups') renderGroupsTab();
+  if(t==='filter') renderGroupChips(S.activeGroupName);
+}
+
+// ── Group chips (quick-select on filter tab) ──────────────────
+function renderGroupChips(selectedGroup){
+  const groups=getGroups();
+  const row=document.getElementById('group-chips-row');
+  if(!groups.length){row.innerHTML='<span style="font-size:12px;color:#aaa;">No groups yet — create one in the Manage groups tab.</span>';return;}
+  row.innerHTML=`<span style="font-size:12px;color:#888;font-weight:500;">Groups:</span>`+
+    groups.map(g=>`<span class="group-chip${selectedGroup===g.name?' active':''}" onclick="applyGroup('${g.name}')">${g.name} <span style="font-size:11px;opacity:.6;">${g.ids.length}</span></span>`).join('')+
+    `<span class="group-chip all-chip${!selectedGroup?' active':''}" onclick="applyGroup(null)">All authors</span>`;
+}
+
+function applyGroup(groupName){
+  S.activeGroupName=groupName;
+  if(groupName){
+    const groups=getGroups();
+    const group=groups.find(g=>g.name===groupName);
+    if(group){
+      // Check only group members
+      document.querySelectorAll('#author-grid input').forEach(cb=>{
+        cb.checked=group.ids.includes(parseInt(cb.value));
+      });
+    }
+  }else{
+    // All authors
+    document.querySelectorAll('#author-grid input').forEach(cb=>cb.checked=true);
+  }
+  updateAuthCount();
+  renderGroupChips(groupName);
+}
+
+// ── Groups management tab ─────────────────────────────────────
+function renderGroupsTab(){
+  const groups=getGroups();
+  const list=document.getElementById('groups-list');
+  if(!groups.length){list.innerHTML='<p style="font-size:13px;color:#aaa;margin-bottom:12px;">No groups created yet.</p>';}
+  else list.innerHTML=groups.map((g,i)=>`
+    <div class="group-card">
+      <div class="group-card-header">
+        <div>
+          <div class="group-name">${g.name}</div>
+          <div class="group-members">${g.ids.length} author${g.ids.length!==1?'s':''}: ${g.ids.map(id=>{const a=S.allAuthors.find(x=>x.id===id);return a?a.name:'Unknown';}).slice(0,4).join(', ')}${g.ids.length>4?` +${g.ids.length-4} more`:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sm" onclick="editGroup(${i})" style="font-size:12px;padding:4px 10px;">Edit</button>
+          <button class="btn-danger" onclick="deleteGroup(${i})">Delete</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Populate new group author checklist
+  const grid=document.getElementById('new-group-grid');
+  grid.innerHTML=S.allAuthors.map(a=>`<div class="check-item" data-name="${a.name.toLowerCase()}"><input type="checkbox" id="ng_${a.id}" value="${a.id}"><label for="ng_${a.id}">${a.name}</label></div>`).join('');
+}
+
+function filterNewGroupList(){
+  const q=document.getElementById('new-group-search').value.toLowerCase();
+  document.querySelectorAll('#new-group-grid .check-item').forEach(el=>{el.style.display=(!q||el.dataset.name.includes(q))?'':'none';});
+}
+
+function saveNewGroup(){
+  const name=document.getElementById('new-group-name').value.trim();
+  if(!name){alert('Please enter a group name.');return;}
+  const ids=[...document.querySelectorAll('#new-group-grid input:checked')].map(c=>parseInt(c.value));
+  if(!ids.length){alert('Please select at least one author.');return;}
+  const groups=getGroups();
+  if(groups.find(g=>g.name===name)){alert('A group with that name already exists.');return;}
+  groups.push({name,ids});
+  saveGroups(groups);
+  document.getElementById('new-group-name').value='';
+  document.querySelectorAll('#new-group-grid input').forEach(c=>c.checked=false);
+  renderGroupsTab();
+  switchTab('filter');
+}
+
+function deleteGroup(i){
+  const groups=getGroups();
+  if(!confirm(`Delete group "${groups[i].name}"?`))return;
+  groups.splice(i,1);
+  saveGroups(groups);
+  renderGroupsTab();
+}
+
+function editGroup(i){
+  const groups=getGroups();
+  const g=groups[i];
+  const newName=prompt('Rename group:',g.name);
+  if(!newName||newName===g.name)return;
+  if(groups.find((x,xi)=>xi!==i&&x.name===newName)){alert('That name is already taken.');return;}
+  groups[i].name=newName;
+  saveGroups(groups);
+  renderGroupsTab();
+}
+
+// ── WP API ────────────────────────────────────────────────────
+async function wpFetch(url){
+  const res=await fetch(url,{headers:getHeaders()});
+  if(res.status===401)throw new Error('Authentication failed — check your username and application password.');
+  if(res.status===403)throw new Error('403 Forbidden — server may be blocking the Authorization header (CORS issue).');
+  if(res.status===404)throw new Error('404 — endpoint not found. The post type slug may be wrong.');
+  if(!res.ok)throw new Error('HTTP '+res.status+' — '+res.statusText);
+  return{data:await res.json(),totalPages:parseInt(res.headers.get('X-WP-TotalPages')||'1'),total:parseInt(res.headers.get('X-WP-Total')||'0')};
+}
+async function fetchAllPages(baseUrl,onProgress){
+  let page=1,all=[],tp=1,tot=0;
+  do{
+    const sep=baseUrl.includes('?')?'&':'?';
+    const r=await wpFetch(`${baseUrl}${sep}page=${page}`);
+    tp=r.totalPages;if(r.total)tot=r.total;
+    const items=Array.isArray(r.data)?r.data:Object.values(r.data);
+    all.push(...items);
+    if(onProgress)onProgress(all.length,tot||all.length,page,tp);
+    page++;
+  }while(page<=tp);
+  return all;
+}
+async function detectTypes(e){
+  e.preventDefault();
+  const rawUrl=document.getElementById('url-in').value;
+  if(!rawUrl.trim()){alert('Enter your WordPress URL first.');return;}
+  S.url=cleanUrl(rawUrl);
+  try{
+    const{data}=await wpFetch(S.url+'/wp-json/wp/v2/types');
+    const types=Object.values(data).filter(t=>t.rest_base);
+    document.getElementById('pt-grid').innerHTML=types.map(t=>`<div class="check-item"><input type="checkbox" id="pt_${t.rest_base}" value="${t.rest_base}" onchange="updatePtCount()"><label for="pt_${t.rest_base}">${t.name}</label><code>${t.rest_base}</code></div>`).join('');
+    document.getElementById('pt-detected').classList.remove('hidden');
+    document.getElementById('pt-manual').classList.add('hidden');
+    updatePtCount();
+  }catch(err){alert('Could not fetch post types: '+err.message);}
+}
+function updatePtCount(){const c=document.querySelectorAll('#pt-grid input:checked').length;const el=document.getElementById('pt-count');el.textContent=c+' selected';el.classList.toggle('hidden',c===0);}
+function checkAll(t){if(t==='pt'){document.querySelectorAll('#pt-grid input').forEach(c=>c.checked=true);updatePtCount();}if(t==='auth'){document.querySelectorAll('#author-grid input').forEach(c=>c.checked=true);updateAuthCount();}}
+function uncheckAll(t){if(t==='pt'){document.querySelectorAll('#pt-grid input').forEach(c=>c.checked=false);updatePtCount();}if(t==='auth'){document.querySelectorAll('#author-grid input').forEach(c=>c.checked=false);updateAuthCount();}}
+function getSelectedPostTypes(){const c=[...document.querySelectorAll('#pt-grid input:checked')].map(c=>c.value);if(c.length)return c;const m=document.getElementById('pt-in').value.trim();return m?m.split(',').map(s=>s.trim()).filter(Boolean):['post'];}
+
+async function fetchAuthors(base){
+  const ep=(S.user&&S.pass)?base+'/wp-json/wp/v2/users?per_page=100&context=edit&_fields=id,name':base+'/wp-json/wp/v2/users?per_page=100&_fields=id,name';
+  return await fetchAllPages(ep);
+}
+
+function buildAuthorGrid(authors){
+  document.getElementById('author-grid').innerHTML=authors.map(a=>`<div class="check-item" data-name="${a.name.toLowerCase()}"><input type="checkbox" id="auth_${a.id}" value="${a.id}" checked onchange="updateAuthCount();S.activeGroupName=null;renderGroupChips(null);"><label for="auth_${a.id}">${a.name}</label></div>`).join('');
+  updateAuthCount();
+}
+function updateAuthCount(){const tot=document.querySelectorAll('#author-grid input').length;const c=document.querySelectorAll('#author-grid input:checked').length;document.getElementById('auth-selected-count').textContent=`${c} of ${tot} selected`;}
+function filterAuthorList(){const q=document.getElementById('author-search').value.toLowerCase();document.querySelectorAll('#author-grid .check-item').forEach(el=>{el.style.display=(!q||el.dataset.name.includes(q))?'':'none';});}
+
+function openAuthorScreen(){
+  buildAuthorGrid(S.allAuthors);
+  if(S.selectedAuthorIds.size>0)document.querySelectorAll('#author-grid input').forEach(cb=>{cb.checked=S.selectedAuthorIds.has(parseInt(cb.value));});
+  updateAuthCount();
+  renderGroupChips(S.activeGroupName);
+  switchTab('filter');
+  show('s-authors');
+}
+
+function handleAuthorsConfirmed(){
+  const ids=[...document.querySelectorAll('#author-grid input:checked')].map(c=>parseInt(c.value));
+  if(!ids.length){alert('Please select at least one author.');return;}
+  S.selectedAuthorIds=new Set(ids);
+  loadArticles();
+}
+
+// ── Date presets ───────────────────────────────────────────────
+function applyPreset(p){
+  S.preset=p;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pre-'+p).classList.add('active');
+  const crr=document.getElementById('custom-range-row');
+  if(p==='custom'){crr.classList.remove('hidden');return;}
+  crr.classList.add('hidden');
+  const now=new Date();
+  let from,to=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(p==='month')from=new Date(now.getFullYear(),now.getMonth(),1);
+  else if(p==='week'){const dow=now.getDay();from=addDays(to,-dow);}
+  else if(p==='today')from=to;
+  else if(p==='last7')from=addDays(to,-6);
+  else if(p==='last30')from=addDays(to,-29);
+  S.dateFrom=from;S.dateTo=to;
+  loadArticles();
+}
+function applyCustomRange(){
+  const fv=document.getElementById('date-from').value,tv=document.getElementById('date-to').value;
+  if(!fv||!tv){alert('Please select both a start and end date.');return;}
+  S.dateFrom=parseDate(fv);S.dateTo=parseDate(tv);
+  if(S.dateFrom>S.dateTo){alert('Start date must be before end date.');return;}
+  loadArticles();
+}
+function initDates(){
+  const now=new Date();
+  S.dateFrom=new Date(now.getFullYear(),now.getMonth(),1);
+  S.dateTo=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  document.getElementById('date-from').value=fmtDate(S.dateFrom);
+  document.getElementById('date-to').value=fmtDate(S.dateTo);
+}
+
+// ── Connect flow ───────────────────────────────────────────────
+async function handleConnect(){
+  const rawUrl=document.getElementById('url-in').value;
+  const goal=parseInt(document.getElementById('goal-in').value)||125;
+  const user=document.getElementById('wp-user').value.trim();
+  const pass=document.getElementById('wp-pass').value.trim();
+  const errEl=document.getElementById('setup-err');
+  if(!rawUrl.trim()){errEl.textContent='Please enter your WordPress URL.';errEl.classList.remove('hidden');return;}
+  errEl.classList.add('hidden');
+  S.url=cleanUrl(rawUrl);S.goal=goal;S.user=user;S.pass=pass;
+  S.postTypes=getSelectedPostTypes();
+  initDates();
+  show('s-loading');setMsg('Fetching authors...','',5);
+  try{
+    const auths=await fetchAuthors(S.url);
+    if(!auths.length)throw new Error('No authors found. Verify the URL and REST API access.');
+    S.allAuthors=auths;S.selectedAuthorIds=new Set(auths.map(a=>a.id));S.activeGroupName=null;
+    buildAuthorGrid(auths);
+    renderGroupChips(null);
+    switchTab('filter');
+    show('s-authors');
+  }catch(e){showError(e);}
+}
+
+async function fetchPostsForType(base,from,to,postType){
+  const after=fmtDate(from)+'T00:00:00',before=fmtDate(to)+'T23:59:59';
+  const baseUrl=`${base}/wp-json/wp/v2/${postType}?after=${after}&before=${before}&per_page=100&status=publish&_fields=id,date,author`;
+  return await fetchAllPages(baseUrl,(loaded,total,page,tp)=>{setMsg(`Fetching "${postType}"… page ${page}/${tp}`,`${loaded.toLocaleString()} of ~${total.toLocaleString()} articles`,null);});
+}
+
+function buildData(posts,auths,from,to){
+  const numDays=Math.round((to-from)/(1000*60*60*24))+1;
+  const authMap={};auths.forEach(a=>{authMap[a.id]=a.name;});
+  const map={};
+  auths.forEach(a=>{if(!S.selectedAuthorIds.size||S.selectedAuthorIds.has(a.id))map[a.id]={id:a.id,name:a.name,days:new Array(numDays).fill(0),total:0};});
+  const daily=new Array(numDays).fill(0);
+  const dates=Array.from({length:numDays},(_,i)=>fmtDate(addDays(from,i)));
+  const dateIndex={};dates.forEach((d,i)=>dateIndex[d]=i);
+  posts.forEach(p=>{
+    const idx=dateIndex[p.date.substring(0,10)];
+    if(idx===undefined)return;
+    daily[idx]++;
+    if(S.selectedAuthorIds.size&&!S.selectedAuthorIds.has(p.author))return;
+    if(!map[p.author])map[p.author]={id:p.author,name:authMap[p.author]||'Author #'+p.author,days:new Array(numDays).fill(0),total:0};
+    map[p.author].days[idx]++;map[p.author].total++;
+  });
+  return{matrix:Object.values(map).sort((a,b)=>b.total-a.total),dailyTotals:daily,dates};
+}
+
+async function loadArticles(){
+  show('s-loading');setMsg('Loading articles...','',10);
+  const{url,dateFrom:from,dateTo:to,postTypes}=S;
+  try{
+    const seen=new Set(),allPosts=[];
+    for(let i=0;i<postTypes.length;i++){
+      const pt=postTypes[i];
+      setMsg(`Fetching "${pt}" (${i+1}/${postTypes.length})…`,'',10+Math.round((i/postTypes.length)*80));
+      const posts=await fetchPostsForType(url,from,to,pt);
+      posts.forEach(p=>{if(!seen.has(p.id)){seen.add(p.id);allPosts.push(p);}});
+    }
+    setMsg('Building dashboard...','',98);
+    const{matrix,dailyTotals,dates}=buildData(allPosts,S.allAuthors,from,to);
+    S.matrix=matrix;S.dailyTotals=dailyTotals;S.dates=dates;
+    renderDash();show('s-dash');
+  }catch(e){showError(e);}
+}
+
+function showError(e){
+  document.getElementById('err-msg').textContent=e.message;
+  document.getElementById('err-cors').classList.toggle('hidden',!e.message.includes('403')&&!e.message.includes('Failed to fetch')&&!e.message.includes('NetworkError'));
+  document.getElementById('err-posttype').classList.toggle('hidden',!e.message.includes('404'));
+  document.getElementById('btn-noauth').classList.toggle('hidden',!(S.user||S.pass));
+  show('s-error');
+}
+function retryNoAuth(){S.user='';S.pass='';loadArticles();}
+
+// ── Render ────────────────────────────────────────────────────
+function renderDash(){
+  const{url,goal,matrix,dailyTotals,dates,postTypes,selectedAuthorIds,allAuthors,activeGroupName,dateFrom:from,dateTo:to}=S;
+  const numDays=dates.length;
+  const total=matrix.reduce((s,a)=>s+a.total,0);
+  const totalMonthDays=new Date(from.getFullYear(),from.getMonth()+1,0).getDate();
+  const rangeGoal=Math.round(goal*(numDays/totalMonthDays));
+  const onGoal=matrix.filter(a=>a.total>=rangeGoal).length;
+  const avg=matrix.length?Math.round(total/matrix.length):0;
+  const bestVal=dailyTotals.length?Math.max(...dailyTotals):0;
+  const bestIdx=dailyTotals.indexOf(bestVal);
+
+  document.getElementById('dash-site').textContent=url.replace(/^https?:\/\//,'');
+  document.getElementById('dash-pt').textContent=postTypes.join(', ');
+  document.getElementById('dash-auth-badge').classList.toggle('hidden',!S.user);
+
+  // Group badge
+  const gb=document.getElementById('dash-group-badge');
+  if(activeGroupName){gb.textContent=activeGroupName;gb.classList.remove('hidden');}else gb.classList.add('hidden');
+
+  // Author filter badge
+  const fb=document.getElementById('dash-author-filter');
+  if(!activeGroupName&&selectedAuthorIds.size<allAuthors.length){fb.textContent=selectedAuthorIds.size+' authors';fb.classList.remove('hidden');}else fb.classList.add('hidden');
+
+  const sameDay=fmtDate(from)===fmtDate(to);
+  document.getElementById('range-label').textContent=sameDay?fmtDisplay(from):`${fmtDisplay(from)} — ${fmtDisplay(to)}`;
+
+  document.getElementById('sc-total').textContent=total.toLocaleString();
+  document.getElementById('sc-total-sub').textContent=`${numDays} day${numDays!==1?'s':''}`;
+  document.getElementById('sc-ongoal').textContent=`${onGoal} / ${matrix.length}`;
+  document.getElementById('sc-ongoal-sub').textContent=`pro-rated goal: ${rangeGoal}`;
+  document.getElementById('sc-avg').textContent=avg.toLocaleString();
+  document.getElementById('sc-avg-sub').textContent='articles per author';
+  document.getElementById('sc-bestday').textContent=bestVal.toLocaleString();
+  document.getElementById('sc-bestday-sub').textContent=bestIdx>=0?fmtDisplay(parseDate(dates[bestIdx])):'—';
+  document.getElementById('view-sub').textContent=`${matrix.length} authors · ${total.toLocaleString()} articles`;
+
+  renderBars(matrix,numDays,rangeGoal);
+  renderDaily(dailyTotals,dates);
+  renderPivot(matrix,dates,goal);
+}
+
+function renderBars(matrix,numDays,rangeGoal){
+  const el=document.getElementById('bars-list');
+  if(!matrix.length){el.innerHTML='<p style="color:#aaa;padding:1rem 0;">No articles found.</p>';return;}
+  el.innerHTML=matrix.map(a=>{
+    const pct=Math.min(100,(a.total/rangeGoal)*100);
+    let sc,sl,bc;
+    if(a.total>=rangeGoal){sc='#1a7f1a';sl='goal met';bc='#22c55e';}
+    else if(pct>=60){sc='#b45309';sl='on track';bc='#f59e0b';}
+    else{sc='#c00';sl='behind';bc='#f87171';}
+    const init=a.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    return`<div class="bar-row"><div class="avatar">${init}</div><div class="bar-meta"><div style="display:flex;justify-content:space-between;gap:8px;"><span class="bar-name">${a.name}</span><span style="font-size:13px;color:${sc};flex-shrink:0;">${a.total.toLocaleString()} / ${rangeGoal}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${bc};"></div></div></div><span style="font-size:11px;font-weight:600;color:${sc};white-space:nowrap;min-width:60px;text-align:right;">${sl}</span></div>`;
+  }).join('');
+  document.getElementById('bars-note').textContent='Goal is pro-rated to the selected date range.';
+}
+
+function renderDaily(dailyTotals,dates){
+  const el=document.getElementById('daily-list');
+  const maxVal=Math.max(...dailyTotals,1);
+  const authorCount=S.selectedAuthorIds.size||S.allAuthors.length;
+  const totalMonthDays=new Date(S.dateFrom.getFullYear(),S.dateFrom.getMonth()+1,0).getDate();
+  const dailyTarget=Math.round((S.goal*authorCount)/totalMonthDays);
+  document.getElementById('daily-target-badge').textContent=`Daily target: ${dailyTarget.toLocaleString()} articles`;
+  document.getElementById('daily-note').textContent=`${dates.length} day${dates.length!==1?'s':''} selected`;
+  el.innerHTML=[...dates].reverse().map((ds,ri)=>{
+    const i=dates.length-1-ri;
+    const count=dailyTotals[i]||0;
+    const d=parseDate(ds);const dow=d.getDay();
+    const todayFlag=isToday(d);const isWeekend=dow===0||dow===6;
+    const pct=Math.round((count/maxVal)*100);
+    const barColor=todayFlag?'#2255cc':count>=dailyTarget?'#22c55e':'#111';
+    const lblClass=todayFlag?'day-label today-lbl':isWeekend?'day-label weekend':'day-label';
+    const diff=count-dailyTarget;
+    return`<div class="day-row"><div class="${lblClass}">${DOW[dow]} ${MS[d.getMonth()]} ${d.getDate()}${todayFlag?' <span style="font-size:10px;background:#2255cc;color:#fff;padding:1px 6px;border-radius:999px;">today</span>':''}</div><div class="day-bar-wrap"><div class="day-bar-track"><div class="day-bar-fill" style="width:${pct}%;background:${barColor};"></div></div><span class="day-count" style="color:${todayFlag?'#2255cc':'#111'}">${count.toLocaleString()}</span><span class="day-sub" style="color:${diff>=0?'#1a7f1a':'#c00'}">${diff>=0?'+':''}${diff.toLocaleString()}</span></div></div>`;
+  }).join('');
+}
+
+function renderPivot(matrix,dates,goal){
+  if(dates.length>60){document.getElementById('pivot-tbl').innerHTML='<tr><td style="padding:1rem;color:#888;font-size:13px;">Breakdown view is limited to 60 days. Select a shorter range.</td></tr>';return;}
+  const head=`<thead><tr><th class="sl" style="text-align:left;min-width:160px;">Author</th>${dates.map(ds=>{const d=parseDate(ds);const t=isToday(d);return`<th style="min-width:32px;${t?'color:#2255cc;font-weight:700;':''}">${MS[d.getMonth()].substring(0,1)}${d.getDate()}</th>`;}).join('')}<th class="sr">Total</th></tr></thead>`;
+  const body=matrix.map(a=>{
+    const cells=a.days.map(c=>{let bg='',color='#ccc';if(c>0){const intensity=Math.min(c/20,1);bg=`rgba(34,197,94,${0.1+intensity*0.4})`;color='#15803d';}return`<td style="background:${bg};color:${color};font-weight:${c>0?600:400};">${c>0?c:'·'}</td>`;}).join('');
+    const tc=a.total>=goal?'#1a7f1a':'#111';const tb=a.total>=goal?'background:#e8f8e8;':'';
+    return`<tr><td class="sl name">${a.name}</td>${cells}<td class="sr" style="${tb}color:${tc};font-weight:600;">${a.total.toLocaleString()}</td></tr>`;
+  }).join('');
+  document.getElementById('pivot-tbl').innerHTML=head+'<tbody>'+body+'</tbody>';
+}
+
+function setView(v){S.view=v;['bars','daily','pivot'].forEach(n=>{document.getElementById('view-'+n).classList.toggle('hidden',v!==n);document.getElementById('btn-'+n).classList.toggle('active',v===n);});}
+function reload(){loadArticles();}
+document.getElementById('url-in').addEventListener('keydown',e=>{if(e.key==='Enter')handleConnect();});
+document.getElementById('wp-pass').addEventListener('keydown',e=>{if(e.key==='Enter')handleConnect();});
+</script>
+</body>
+</html>
